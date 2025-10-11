@@ -1,7 +1,7 @@
 Copyright (c) 2025 Arturo Ortgea Salinas
 **ALL RIGHTS RESERVED**
 
-This software and its source code, including but not limited to the `Enterprise 1.9.json` file (hereinafter referred to as "the Software"), 
+This software and its source code, including but not limited to the `EnterpriseSales1.9.json` file (hereinafter referred to as "the Software"), 
 is the intellectual property of Arturo Ortega Salinas and is protected by copyright laws.
 
 Strictly prohibited, without the prior written permission of the copyright holder, is any use, copying, modification, merging, publishing, distribution, sublicensing, 
