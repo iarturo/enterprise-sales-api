@@ -1,0 +1,65 @@
+-- Function to create a sale and update inventory atomically
+-- Run this in your PostgreSQL database before using the updated workflow
+CREATE OR REPLACE FUNCTION create_sale_with_inventory_update(
+    p_company_id INT,
+    p_user_id UUID,
+    p_customer_info JSONB,
+    p_invoice_number TEXT,
+    p_total_amount DECIMAL,
+    p_tax_amount DECIMAL,
+    p_final_total DECIMAL,
+    p_payment_method TEXT,
+    p_metadata JSONB,
+    p_product_ids INT[],
+    p_quantities INT[],
+    p_unit_prices DECIMAL[],
+    p_total_prices DECIMAL[]
+) RETURNS TABLE(sale_id INT, success BOOLEAN, error_message TEXT) AS $$
+BEGIN
+    -- Lock inventario
+    PERFORM 1 FROM inventory 
+    WHERE product_id = ANY(p_product_ids) 
+    FOR UPDATE;
+    
+    -- Validar stock
+    IF EXISTS (
+        SELECT 1 FROM inventory i
+        JOIN unnest(p_product_ids, p_quantities) AS items(pid, qty) ON i.product_id = items.pid
+        WHERE i.quantity < items.qty
+    ) THEN
+        RETURN QUERY SELECT NULL::INT, FALSE, 'Stock insuficiente'::TEXT;
+        RETURN;
+    END IF;
+    
+    -- Actualizar inventario
+    UPDATE inventory i
+    SET quantity = i.quantity - items.qty,
+        reserved = i.reserved + items.qty
+    FROM unnest(p_product_ids, p_quantities) AS items(pid, qty)
+    WHERE i.product_id = items.pid;
+    
+    -- Insertar venta
+    INSERT INTO sales (company_id, user_id, customer_info, invoice_number, 
+                      total_amount, tax_amount, final_total, payment_method, metadata)
+    VALUES (p_company_id, p_user_id, p_customer_info, p_invoice_number,
+           p_total_amount, p_tax_amount, p_final_total, p_payment_method, p_metadata)
+    RETURNING id INTO sale_id;
+    
+    -- Insertar items
+    INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, total_price)
+    SELECT sale_id, 
+           unnest(p_product_ids),
+           unnest(p_quantities),
+           unnest(p_unit_prices),
+           unnest(p_total_prices);
+    
+    RETURN QUERY SELECT sale_id, TRUE, NULL::TEXT;
+    
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT NULL::INT, FALSE, SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+
+// One final check: Make sure your n8n instance allows the use of the redis library in the Code node (or that you have a Redis instance available if you are using the standard Redis node). The new Idempotency check depends on this.
+
+You are good to go! 🚀
