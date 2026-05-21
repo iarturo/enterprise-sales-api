@@ -1523,10 +1523,10 @@
     "settings": {
         "executionOrder": "v1"
     },
-    "versionId": "9b53b59a-c713-4c7d-9fab-2ee624634824",
+    "versionId": "REPLACE_WITH_YOUR_VERSION_ID",
     "meta": {
-        "instanceId": "83b34abb32d90e19b18d30a9f5a704a7e5862aa73858f9d8f098b0bfd3132ef3"
+        "instanceId": "REPLACE_WITH_YOUR_INSTANCE_ID"
     },
-    "id": "tzlPksM4hLAZTvCF",
+    "id": "REPLACE_WITH_YOUR_WORKFLOW_ID",
     "tags": []
 }

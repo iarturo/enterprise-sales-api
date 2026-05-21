@@ -1,0 +1,47 @@
+# ── Environment & Secrets ─────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ── n8n Credentials & Data ────────────────────────
+creds.json
+credentials.json
+*.credentials
+n8n-data/
+.n8n/
+
+# ── Backups ───────────────────────────────────────
+*.dump
+*.sql.gz
+*.backup
+*.bak
+
+# ── OS Generated ──────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# ── IDE / Editor ──────────────────────────────────
+.vscode/
+.idea/
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# ── Node / Dependencies ──────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# ── Logs ──────────────────────────────────────────
+logs/
+*.log
+
+# ── Temporary Files ───────────────────────────────
+tmp/
+temp/
+*.tmp
