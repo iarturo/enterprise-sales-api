@@ -3,47 +3,62 @@
   <img src="https://img.shields.io/badge/Supabase-Auth-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Redis-Cache-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
-  <img src="https://img.shields.io/badge/Datadog-Monitoring-632CA6?style=for-the-badge&logo=datadog&logoColor=white" alt="Datadog" />
-  <img src="https://img.shields.io/badge/Version-3.0.1-blue?style=for-the-badge" alt="Version" />
-  <img src="https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge" alt="License" />
+  <img src="https://img.shields.io/badge/Status-Reference%20Implementation-blue?style=for-the-badge" alt="Status" />
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" />
 </p>
 
-<h1 align="center">🏢 Enterprise Sales</h1>
+<h1 align="center">🏢 Enterprise Sales — n8n Backend Reference</h1>
 
 <p align="center">
-  <strong>A production-grade, security-first Sales Management API built entirely on n8n workflows.</strong>
+  <strong>A reference implementation of an enterprise-style Sales Management API, built entirely on n8n workflows.</strong>
   <br />
-  Full authentication, transactional sales processing, real-time inventory management, automated reporting, and observability — without writing a single line of backend server code.
+  Demonstrates production patterns: authentication, rate limiting, idempotency, atomic transactions, and observability — without writing a single line of backend server code.
 </p>
 
 <p align="center">
+  <a href="#-about-this-project">About</a> •
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-architecture">Architecture</a> •
   <a href="#-api-reference">API Reference</a> •
-  <a href="#-security">Security</a> •
-  <a href="#-deployment">Deployment</a> •
-  <a href="#-license">License</a>
+  <a href="#-security-patterns">Security Patterns</a> •
+  <a href="#-deployment">Deployment</a>
 </p>
+
+---
+
+## 📖 About This Project
+
+This repository is a **portfolio piece** demonstrating how far n8n can be pushed as a backend platform. It is a fully functional reference implementation — every endpoint works, every validation runs, every workflow is wired end-to-end — but it has not been deployed to serve real users in production.
+
+It exists to showcase a specific set of skills:
+
+- Designing REST APIs with proper auth, rate limiting, and idempotency
+- Modeling atomic database transactions for inventory + sales flows
+- Composing observability and operational tooling (health checks, logging, backups)
+- Architecting layered security (defense in depth)
+- Documenting an API to a level where a third party could integrate against it
+
+If you are evaluating this repo for hiring or collaboration purposes, the code, workflow, and documentation here represent how I approach backend design problems. Happy to walk through any design decision in detail.
 
 ---
 
 ## 🎯 Overview
 
-**Enterprise Sales** transforms [n8n](https://n8n.io) from a simple automation tool into a fully featured, enterprise-ready REST API backend. It exposes secure webhook endpoints that handle the complete lifecycle of a sales operation — from user authentication to invoice generation — while enforcing rate limiting, idempotency, input sanitization, and atomic database transactions.
+**Enterprise Sales** transforms [n8n](https://n8n.io) from a simple automation tool into a structured REST API backend. It exposes webhook endpoints that handle the full lifecycle of a sales operation — from user authentication to invoice generation — while enforcing rate limiting, idempotency, input sanitization, and atomic database transactions.
 
-### Why Enterprise Sales?
+### What this project demonstrates
 
-| Traditional Approach | Enterprise Sales |
+| Conventional Approach | This Reference Implementation |
 |---|---|
-| Months building a custom backend | Import a single JSON workflow |
-| Managing Express/FastAPI servers | n8n handles HTTP routing & orchestration |
-| Writing auth middleware from scratch | Supabase Auth with JWT validation out of the box |
+| Months building a custom Express/FastAPI backend | A single n8n workflow handles HTTP routing & orchestration |
+| Writing auth middleware from scratch | Supabase Auth with JWT validation, wired through n8n nodes |
 | Manual rate limiting implementation | Redis-backed rate limiting per IP + User-Agent |
-| Complex deployment pipelines | One-click deploy on n8n Cloud or self-host |
+| Custom idempotency layer | Redis `SETNX` with 24h TTL |
+| Boilerplate transaction handling | PostgreSQL stored function for atomic sale + inventory update |
 
 ---
 
-## ✨ Key Features
+## ✨ Features Implemented
 
 ### 🔐 Authentication & Authorization
 - **Supabase Auth** integration with JWT-based access & refresh tokens
@@ -51,7 +66,7 @@
 - Multi-tenant support via `company_id` scoping
 - CORS configuration with environment-driven allowed origins
 
-### 🛡️ Enterprise Security
+### 🛡️ Security Patterns
 - **Redis-powered rate limiting** — 5 requests/minute per IP + User-Agent fingerprint
 - **Idempotency keys** — prevent duplicate sale creation with Redis `SETNX` + 24h TTL
 - **Input sanitization** — HTML/SQL injection protection on all user-supplied strings
@@ -65,18 +80,17 @@
 - Race condition detection with HTTP 409 responses
 - Automatic tax calculation with configurable tax rates
 - Auto-generated invoice numbers (`F-YYYY-XXXXXX-XXX`)
-- Support for up to 100 line items per sale, quantities up to 10,000 units
+- Validation for up to 100 line items per sale, quantities up to 10,000 units
 
 ### 📊 Reporting & Export
 - Paginated sales queries with date range filtering (up to 10,000 records)
 - Excel/PDF export via **CloudConvert** API integration
 - Async report generation with execution job tracking
 
-### 🔄 Operational Excellence
+### 🔄 Operational Patterns
 - **Health check endpoint** — monitors PostgreSQL + Redis connectivity
-- **Automated daily backups** — scheduled at 2:00 AM UTC with `pg_dump`
-- **Backup audit logging** — every backup is tracked in a `backup_logs` table
-- **Centralized error logging** — all failures are forwarded to **Datadog**
+- **Scheduled backup workflow** — `pg_dump` on cron, with audit logging to `backup_logs` table
+- **Centralized error logging** — failures forwarded to **Datadog** for observability
 
 ---
 
@@ -137,7 +151,7 @@
 | **Create Sale** | `POST /api/sales` | Validate Token → Supabase Verify → Redis Idempotency → Verify Inventory → Process Sale → Atomic Transaction | Create a new sale with inventory update |
 | **Sales Report** | `GET /api/reports/sales` | Validate Token → Supabase Verify → PostgreSQL Query → CloudConvert Export | Generate & export sales reports |
 | **Health Check** | `GET /api/health` | PostgreSQL Ping → Redis Ping → Aggregate Status | Monitor infrastructure health |
-| **Daily Backup** | Cron `0 2 * * *` | Execute pg_dump → Log Backup | Automated database backup |
+| **Scheduled Backup** | Cron `0 2 * * *` | Execute pg_dump → Log Backup | Database backup workflow |
 
 ---
 
@@ -155,8 +169,8 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/iarturo/Enterprise-Sales-API.git
-cd Enterprise-Sales-API
+git clone https://github.com/iarturo/enterprise-sales-api.git
+cd enterprise-sales-api
 ```
 
 ### 2. Set Up the Database
@@ -173,7 +187,7 @@ Then run the stored function required for atomic sale transactions:
 ```sql
 -- File: Function.txt
 -- Creates the `create_sale_with_inventory_update` PL/pgSQL function
--- This handles inventory locking, stock validation, and sale insertion atomically
+-- Handles inventory locking, stock validation, and sale insertion atomically
 \i Function.txt
 ```
 
@@ -208,7 +222,7 @@ CLOUDCONVERT_API_KEY=your-cloudconvert-key
 
 1. Open your n8n instance
 2. Click **Import from file**
-3. Select `EnterpriseSales3.0.1.json`
+3. Select `enterprise-sales.json`
 4. Assign credentials to each node group:
    - **PostgreSQL nodes** → your PostgreSQL credential
    - **Redis nodes** → your Redis credential
@@ -385,16 +399,15 @@ curl https://your-n8n.com/webhook/api/health
   "services": {
     "database": { "status": "healthy" },
     "redis": { "status": "healthy" }
-  },
-  "version": "1.0.0"
+  }
 }
 ```
 
 ---
 
-## 🔒 Security
+## 🔒 Security Patterns
 
-Enterprise Sales implements defense-in-depth across multiple layers:
+This implementation applies defense-in-depth across multiple layers:
 
 ```
 Request ──▶ Rate Limiting ──▶ Input Validation ──▶ JWT Verification ──▶ Idempotency ──▶ Business Logic
@@ -411,16 +424,16 @@ Request ──▶ Rate Limiting ──▶ Input Validation ──▶ JWT Verific
 | **XSS Prevention** | Input sanitization | Strip `< > ' " \` from user-supplied strings |
 | **Race Conditions** | `SELECT ... FOR UPDATE` | Row-level locks during inventory checks |
 | **Timeouts** | 10s on all HTTP calls | Prevents hanging connections |
-| **Error Logging** | Datadog integration | All errors are shipped to centralized logging |
+| **Error Logging** | Datadog integration | All errors forwarded to centralized logging |
 | **CORS** | Environment-driven | `Access-Control-Allow-Origin` set via `FRONTEND_URL` |
-
-> For the full changelog of security improvements, see [SECURITY_IMPROVEMENTS.md](SECURITY_IMPROVEMENTS.md).
 
 ---
 
 ## 🚢 Deployment
 
-### Option 1 — Lightweight VPS (Recommended for small teams)
+If you wanted to take this from reference implementation to actual production, here is how I'd approach scaling it.
+
+### Option 1 — Lightweight VPS (small teams)
 
 | Component | Service | Cost |
 |---|---|---|
@@ -439,9 +452,9 @@ Request ──▶ Rate Limiting ──▶ Input Validation ──▶ JWT Verific
 
 ### Option 3 — Kubernetes (Enterprise scale)
 
-For 1,000+ concurrent users. Deploy PostgreSQL, Redis, and n8n as separate services behind an ingress controller with horizontal pod autoscaling.
+For 1,000+ concurrent users. PostgreSQL, Redis, and n8n would deploy as separate services behind an ingress controller with horizontal pod autoscaling.
 
-### Scaling Guide
+### Scaling Considerations
 
 | Users | Auth | Cache | Workflow |
 |---|---|---|---|
@@ -454,23 +467,19 @@ For 1,000+ concurrent users. Deploy PostgreSQL, Redis, and n8n as separate servi
 ## 📁 Project Structure
 
 ```
-Enterprise-Sales-API/
-├── EnterpriseSales3.0.1.json          # ✅ Current production workflow (v3.0.1)
-├── EnterpriseSales2.4.json            # Previous stable release
-├── EnterpriseSales2.3.json            # Archive
-├── EnterpriseSales2.2.json            # Archive
-├── EnterpriseSales2.1.json            # Archive
-├── EnterpriseSales2.0.json            # Archive
-├── Function.txt                       # PL/pgSQL stored function (required)
-├── GUIA_CONFIGURACION_FUNCIONAL.md    # Step-by-step setup guide (Spanish)
-├── SECURITY_IMPROVEMENTS.md           # Security changelog & audit notes
-├── LICENSE.md                         # Proprietary license
+enterprise-sales-api/
+├── enterprise-sales.json              # n8n workflow export
+├── Function.txt                       # PL/pgSQL stored function
+├── GUIA_CONFIGURACION_FUNCIONAL.md    # Setup guide (Spanish)
+├── LICENSE                            # MIT License
 └── README.md                          # ← You are here
 ```
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ Possible Extensions
+
+If I were to take this further, the natural next steps would be:
 
 - [ ] Two-factor authentication (TOTP via Supabase)
 - [ ] Webhook notifications on sale creation (Slack / WhatsApp Business)
@@ -482,22 +491,17 @@ Enterprise-Sales-API/
 
 ---
 
-## 🤝 Contributing
+## 💬 Feedback Welcome
 
-This is a proprietary project. Contributions are accepted by invitation only. If you have been granted access for evaluation or collaboration purposes, please coordinate with the project owner before submitting changes.
+This is a personal portfolio project. If you're reviewing it for hiring, collaboration, or just curiosity, I'm happy to walk through any architectural decision, trade-off, or extension idea. Open an issue or reach out directly.
+
+📧 arturo66@gmail.com
+🔗 [LinkedIn](https://www.linkedin.com/in/arturo-ortega-90761a406/)
 
 ---
 
 ## 📄 License
 
-**Copyright © 2025 Arturo Ortega Salinas — All Rights Reserved.**
+Released under the **MIT License**. See [LICENSE](LICENSE) for details.
 
-This software is proprietary and protected by copyright law. No part of this software may be used, copied, modified, distributed, sublicensed, or sold without prior written permission from the copyright holder. Access to this repository is granted solely for authorized evaluation and collaboration purposes.
-
-See [LICENSE.md](LICENSE.md) for the full license text.
-
----
-
-<p align="center">
-  Built with ❤️ using <a href="https://n8n.io">n8n</a> · Powered by <a href="https://supabase.com">Supabase</a> & <a href="https://www.postgresql.org/">PostgreSQL</a>
-</p>
+Built by **Arturo Ortega Salinas** — Mexico City.
